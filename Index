@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>یادبود آنلاین</title>
+
+<!-- Swiper CSS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" />
+
+<style>
+body {margin:0;padding:0;font-family:"Tahoma",sans-serif;background:#f0fff0;color:#333;}
+.container{max-width:1000px;margin:auto;padding:20px;}
+h2{color:#0a642a;margin-bottom:20px;text-align:center;}
+/* اسلایدر */
+.swiper { width: 100%; height: 300px; margin-bottom:20px; border-radius:15px; overflow:hidden; }
+.swiper-slide img { width:100%; height:100%; object-fit:cover; border-radius:15px; }
+/* شمارنده */
+.count-box{background:#085f2e;color:white;padding:25px;border-radius:12px;margin:20px 0;text-align:center;}
+.count-box button{background:#c5a253;color:white;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;margin-top:10px;}
+.count-box button:hover{background:#ad8a40;}
+/* بخش سوره */
+.surah-box{background:#ffffff;padding:20px;border-radius:12px;box-shadow:0 0 10px rgba(0,0,0,0.1);margin-bottom:20px;}
+.surah-select{padding:8px 12px;margin-bottom:10px;border-radius:6px;border:1px solid #c5a253;}
+.surah-content{max-height:400px;overflow-y:auto;text-align:right;line-height:1.6;padding:10px;border:1px solid #cfe8cf;border-radius:10px;background:#f7fff7;}
+.surah-content p{margin:5px 0;}
+/* پخش صوت */
+audio{width:100%;margin-top:10px;}
+/* نقشه */
+.map-box{height:300px;width:100%;border-radius:15px;overflow:hidden;margin-bottom:30px;}
+iframe{width:100%;height:100%;border:0;border-radius:15px;}
+/* واکنش‌گرا */
+@media(max-width:768px){.swiper{height:200px;}}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h2>یادبود آنلاین مرحوم</h2>
+
+<!-- اسلایدر آلبوم عکس -->
+<div class="swiper mySwiper">
+  <div class="swiper-wrapper">
+    <div class="swiper-slide"><img src="photo1.jpg" alt="عکس 1"></div>
+    <div class="swiper-slide"><img src="photo2.jpg" alt="عکس 2"></div>
+    <div class="swiper-slide"><img src="photo3.jpg" alt="عکس 3"></div>
+  </div>
+  <!-- ناوبری -->
+  <div class="swiper-button-next"></div>
+  <div class="swiper-button-prev"></div>
+  <!-- دات‌ها -->
+  <div class="swiper-pagination"></div>
+</div>
+
+<!-- شمارنده فاتحه -->
+<div class="count-box">
+<p>تعداد فاتحه‌های خوانده شده:</p>
+<h1 id="count">0</h1>
+<button onclick="addFateheh()">فاتحه خواندم</button>
+</div>
+
+<!-- پخش صوت آیت‌الکرسی -->
+<div class="count-box">
+<h3>پخش آیت‌الکرسی:</h3>
+<audio id="quranAudio" controls>
+<source src="ayatolkursi.mp3" type="audio/mpeg">
+</audio>
+</div>
+
+<!-- سوره کامل قرآن -->
+<div class="surah-box">
+<h3>سوره قرآن (متن کامل):</h3>
+<select id="surahSelect" class="surah-select" onchange="loadSurah(this.value)">
+<option value="">-- انتخاب سوره --</option>
+</select>
+<div class="surah-content" id="surahText"></div>
+</div>
+
+<!-- نقشه تعبیه شده -->
+<div class="map-box">
+<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3239.724450413798!2d51.39521001514703!3d35.64110758019107!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3f8df51a7c4a5d11%3A0x7d1ed7f3aebd2e8!2sBehesht-e%20Zahra%2C%20Tehran%2C%20Iran!5e0!3m2!1sen!2sus!4v1700000000000!5m2!1sen!2sus" allowfullscreen="" loading="lazy"></iframe>
+</div>
+
+</div>
+
+<!-- Swiper JS -->
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+<script>
+// اسلایدر Swiper
+var swiper = new Swiper(".mySwiper", {
+  loop:true,
+  pagination:{el:".swiper-pagination",clickable:true},
+  navigation:{nextEl:".swiper-button-next",prevEl:".swiper-button-prev"},
+});
+
+// شمارنده فاتحه
+let count = localStorage.getItem('fateheh')||0;
+document.getElementById('count').innerText=count;
+function addFateheh(){count++;localStorage.setItem('fateheh',count);document.getElementById('count').innerText=count;}
+
+// لیست سوره‌ها
+fetch('https://api.alquran.cloud/v1/surah')
+.then(r=>r.json())
+.then(data=>{
+const select=document.getElementById('surahSelect');
+data.data.forEach(s=>{
+let opt=document.createElement('option');
+opt.value=s.number; opt.text=`${s.number} - ${s.englishName} (${s.name})`;
+select.appendChild(opt);
+});
+});
+
+// نمایش متن کامل سوره و صوت
+function loadSurah(num){
+if(!num){document.getElementById('surahText').innerHTML=""; return;}
+fetch(`https://api.alquran.cloud/v1/surah/${num}/ar.alafasy`)
+.then(r=>r.json())
+.then(data=>{
+let html="";
+data.data.ayahs.forEach(a=>{
+html+=`<p><strong>${a.numberInSurah}:</strong> ${a.text}</p>`;
+});
+document.getElementById('surahText').innerHTML=html;
+// پخش صوت خودکار سوره
+let audio=new Audio(data.data.audio);
+audio.play();
+});
+}
+</script>
+
+</body>
+</html>
